@@ -7,11 +7,6 @@ void clear_input_buffer() {
     while (getchar() != '\n');
 }
 
-// Показать все записи
-void handle_show_all(struct data_base* db) {
-    printf("Вся база заказов:\n");
-    display_items(db);
-}
 
 // Добавление новой записи
 void handle_add_record(struct data_base* db) {
@@ -174,7 +169,7 @@ void show_main_menu(struct data_base* db) {
         printf("╔═════════════════════════════════════════╗\n");
         printf("║  Система управления базой данных автo   ║\n");
         printf("╠═════════════════════════════════════════╣\n");
-        printf("║ Текущее количество записей в базе:%-4d     ║\n",db->size);
+        printf("║ Текущее количество записей в базе:%-4d  ║\n",db->size);
         printf("║ Главное меню:                           ║\n");
         printf("║ 1. Показать все заказы                  ║\n");
         printf("║ 2. Добавить новый заказ                 ║\n");
@@ -183,7 +178,7 @@ void show_main_menu(struct data_base* db) {
         printf("║ 5. сохранить изменение                  ║\n");
         printf("║ 6. Выход                                ║\n");
         printf("╚═════════════════════════════════════════╝\n\n");
-        printf(" Выберите пункт меню (1-5):            \n");
+        printf(" Выберите пункт меню (1-6):            \n");
         int selection;
         scanf("%d", &selection);
         clear_input_buffer();
@@ -222,4 +217,15 @@ void handle_show_all(struct data_base* db) {
     }
     printf("Вся база заказов:\n");
     display_items(db);
+}
+
+void display_items(struct data_base* system) {
+    for (int i = 0; i < system->size; i++) {
+        printf("Запись %d:\n", i + 1);
+        printf("ID: %d\n", system->records[i].id);
+        printf("Дата: %s\n", system->records[i].date);
+        printf("Тип работы: %s\n", system->records[i].type_work);
+        printf("Пробег: %d\n", system->records[i].mileage);
+        printf("Стоимость: %.2f\n\n", system->records[i].price);
+    }
 }

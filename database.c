@@ -35,19 +35,6 @@ void modify_item(struct data_base* system, int index, struct technical_maintenan
         system->records[index] = new_item;
     }
 }
-
-// вывод всех элементов
-void display_items(struct data_base* system) {
-    for (int i = 0; i < system->size; i++) {
-        printf("Запись %d:\n", i + 1);
-        printf("ID: %d\n", system->records[i].id);
-        printf("Дата: %s\n", system->records[i].date);
-        printf("Тип работы: %s\n", system->records[i].type_work);
-        printf("Пробег: %d\n", system->records[i].mileage);
-        printf("Стоимость: %.2f\n\n", system->records[i].price);
-    }
-}
-
 // освобождение памяти
 void free_system(struct data_base* system) {
     free(system->records);
@@ -57,65 +44,35 @@ void free_system(struct data_base* system) {
 //проверка корректного ввода даты
 int validate_date(const char* date) {
     if (strlen(date) != 10) return 0;
-    if (date[2] != '.' || date[5] != '.') return 0;
+    if (date[2] != '.' || date[5] != '.') return 0;  
+    int day, month, year;
+    if (sscanf(date, "%2d.%2d.%4d", &day, &month, &year) != 3) return 0;   
+    // Проверка корректности даты
+    if (day < 1 || day > 31) return 0;
+    if (month < 1 || month > 12) return 0;
+    if (year < 2000 || year > 2100) return 0;
     
-    for (int i = 0; i < 10; i++) {
-        if (i == 2 || i == 5) continue;
-        if (date[i] < '0' || date[i] > '9') return 0;
-    }
     return 1;
 }
-//автовыставка цен за работу
-void autoprice(technical_maintenance* record) {
-    if (strcmp(record->type_work, "замена масла") == 0 || 
-        strcmp(record->type_work, "Замена масла") == 0) {
-        record->price = 2100;
-    } else if (strcmp(record->type_work, "осмотр ТС") == 0 || 
-               strcmp(record->type_work, "Осмотр ТС") == 0) {
-        record->price = 999.99;
-    } else if (strcmp(record->type_work, "замена фильтра") == 0 || 
-               strcmp(record->type_work, "Замена фильтра") == 0) {
-        record->price = 14999.90;
-    } else if (strcmp(record->type_work, "покраска кузова") == 0 || 
-               strcmp(record->type_work, "Покраска кузова") == 0) {
-        record->price = 33500.90;
-    } else if (strcmp(record->type_work, "ремонт двигателя") == 0 || 
-               strcmp(record->type_work, "Ремонт двигателя") == 0) {
-        record->price = 150000.90;
-    } else if (strcmp(record->type_work, "полное ТО") == 0 || 
-               strcmp(record->type_work, "Полное ТО") == 0) {
-        record->price = 8999.90;
-    } else {
-        printf("│ Введите стоимость: ");
-        scanf("%f", &record->price);
-    }
-}
+
 // Сохранение в бинарный файл
-void load_from_file(struct data_base* system, const char* filename) {
-    FILE* file = fopen(filename, "rb");
+void save_to_file(struct data_base* system, const char* filename) {
+    FILE* file = fopen(filename, "wb");
     if (!file) {
-        printf("Файл не найден, начинаем с пустой базы.\n");
+        printf("Ошибка открытия файла для записи!\n");
         return;
     }
     
-    // Читаем количество записей
-    int size;
-    fread(&size, sizeof(int), 1, file);
+    // Записываем количество записей
+    fwrite(&system->size, sizeof(int), 1, file);
     
-    // Увеличиваем емкость если нужно
-    if (size > system->capacity) {
-        system->capacity = size;
-        system->records = realloc(system->records, system->capacity * sizeof(technical_maintenance));
+    // Записываем все записи
+    for (int i = 0; i < system->size; i++) {
+        fwrite(&system->records[i], sizeof(technical_maintenance), 1, file);
     }
     
-    // Читаем все записи
-    for (int i = 0; i < size; i++) {
-        fread(&system->records[i], sizeof(technical_maintenance), 1, file);
-    }
-    
-    system->size = size;
     fclose(file);
-    printf("Данные загружены из файла: %s. Записей: %d\n", filename, size);
+    printf("Данные сохранены в файл: %s. Записей: %d\n", filename, system->size);
 }
 
 // Загрузка из бинарного файла
@@ -124,8 +81,7 @@ void load_from_file(struct data_base* system, const char* filename) {
     if (!file) {
         printf("Файл не найден, начинаем с пустой базы.\n");
         return;
-    }
-    
+    } 
     // Читаем количество записей
     int size;
     fread(&size, sizeof(int), 1, file);
