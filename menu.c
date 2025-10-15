@@ -7,7 +7,6 @@ void clear_input_buffer() {
     while (getchar() != '\n');
 }
 
-
 // Добавление новой записи
 void handle_add_record(struct data_base* db) {
     technical_maintenance new_record;
@@ -20,6 +19,8 @@ void handle_add_record(struct data_base* db) {
         char new_date[11];
         printf("│ Введите дату в формате хх.хх.хххх:");
         scanf("%10s", new_date);
+        clear_input_buffer(); // Очистка буфера после scanf
+        
         if (validate_date(new_date) == 0) {
             printf("│ Ошибка ввода! Неверный формат даты.\n");
             continue;
@@ -28,34 +29,39 @@ void handle_add_record(struct data_base* db) {
             cnt_date++;
         }
     }
-    clear_input_buffer();
+    
     printf("│ Введите тип работы:");
     fgets(new_record.type_work, sizeof(new_record.type_work), stdin);
     new_record.type_work[strcspn(new_record.type_work, "\n")] = 0;
     
     // Автоматическое определение цены
     autoprice(&new_record);
+    
     int cnt_mileage = 0;
     while (cnt_mileage == 0)
     {
         int mileage;
         printf("│ Введите пробег: ");
-        scanf("%d", &mileage);
+        int result = scanf("%d", &mileage);
+        clear_input_buffer(); // Всегда очищаем буфер после scanf
+        
+        if (result != 1) {
+            printf("│ Ошибка ввода! Введите число.\n");
+            continue;
+        }
+        
         if (mileage > 0){
             new_record.mileage = mileage;
             cnt_mileage++;
         }
         else{
-            printf("│ Ошибка ввода!\n");
+            printf("│ Ошибка ввода! Пробег должен быть положительным.\n");
         }
     }
-
-    clear_input_buffer();
     
     // Добавление записи в базу
     add_item(db, new_record);
     printf("│ Запись успешно добавлена!\n\n");
-    
 }
 
 // Удаление записи
@@ -67,10 +73,13 @@ void handle_delete_record(struct data_base* db) {
         printf("│ Если хотите отменить операцию введите 0(ноль): ");
         int index_selection4;
         scanf("%d", &index_selection4);
+        clear_input_buffer(); // Очистка буфера
         
         if (index_selection4 >= 1 && index_selection4 <= db->size) {
             printf("│ Вы уверены? (да-1, нет-0): ");
             scanf("%d", &confirmation);
+            clear_input_buffer(); // Очистка буфера
+            
             if (confirmation == 1) {
                 printf("│ Хорошо! Заявка номер %d удалена\n", index_selection4);
                 delete_item(db, index_selection4 - 1); 
@@ -89,12 +98,14 @@ void handle_delete_record(struct data_base* db) {
         }
     }
 }
+
 // Редактирование записи 
 void handle_edit_record(struct data_base* db) {
     printf("│ Введите номер заказа, который хотите изменить\n");
     printf("│ Если хотите отменить операцию введите 0(ноль): ");
     int index_selection3;
     scanf("%d", &index_selection3);
+    clear_input_buffer(); // Очистка буфера
     
     if (index_selection3 == 0) {
         printf("│ Операция отменена!\n");
@@ -112,6 +123,7 @@ void handle_edit_record(struct data_base* db) {
         printf("│ выберите(1-4):");
         scanf("%d",&selection_edit_record);
         clear_input_buffer();
+        
         switch(selection_edit_record){
             case 1:
                 printf("│ Введите новый тип работы:");
@@ -119,49 +131,89 @@ void handle_edit_record(struct data_base* db) {
                 fgets(new_type_work, sizeof(new_type_work), stdin);
                 new_type_work[strcspn(new_type_work, "\n")] = 0;
 
-                technical_maintenance updated = db->records[actual_index]; // копия масива
+                technical_maintenance updated = db->records[actual_index];
                 strncpy(updated.type_work, new_type_work, sizeof(updated.type_work) - 1);
                 modify_item(db, actual_index, updated);
                 printf("│ Тип работы изменен!\n");
                 break;
             
             case 2:
-                printf("│ Введите новою стоимость:");
+                printf("│ Введите новую стоимость:");
                 float new_price;
-                scanf("%f",&new_price);
-                technical_maintenance updated_price = db -> records[actual_index];
-                updated_price.price = new_price;
-                modify_item(db,actual_index,updated_price);
-                printf("│ Стоимость изменена!");
+                int result = scanf("%f", &new_price);
+                clear_input_buffer(); // Очистка буфера
+                
+                if (result == 1) {
+                    technical_maintenance updated_price = db->records[actual_index];
+                    updated_price.price = new_price;
+                    modify_item(db, actual_index, updated_price);
+                    printf("│ Стоимость изменена!\n");
+                } else {
+                    printf("│ Ошибка ввода стоимости!\n");
+                }
                 break;
+                
             case 3:
                 printf("│ Введите новую дату:");
                 char new_date[11];
-                scanf("%10s",&new_date);
-                
-                technical_maintenance updated_date = db -> records[actual_index];
-                strncpy(updated_date.date,new_date, sizeof(updated_date.date)-1);
-                modify_item(db,actual_index,updated_date);
-                printf("│ Дата изменена!");
+                int cnt_validate_date = 0;
+                while (cnt_validate_date == 0)
+                {
+                    scanf("%10s", new_date);
+                    clear_input_buffer(); // Очистка буфера
+                    
+                    if (validate_date(new_date) == 1) {
+                        technical_maintenance updated_date = db->records[actual_index];
+                        strncpy(updated_date.date, new_date, sizeof(updated_date.date)-1);
+                        modify_item(db, actual_index, updated_date);
+                        printf("│ Дата изменена!\n");
+                        cnt_validate_date++;
+                    } else {
+                        printf("│ Неверный формат ввода!\n");
+                        printf("│ Введите новую дату:"); 
+                    }
+                }
                 break;
+                
             case 4:
                 printf("│ Введите новый пробег:");
                 int new_mileage;
-                scanf("%d",&new_mileage);
-                technical_maintenance updated_mileage = db -> records[actual_index];
-                updated_mileage.mileage = new_mileage;
-                modify_item(db,actual_index,updated_mileage);
-                printf("│ Пробег изменен!\n");
-                break;
-            default:
-                printf("│ Неверный ввод!");
-        }
-        
+                int cnt_validate_mileage = 0;
+                
+                while (cnt_validate_mileage == 0) {
+                    int result = scanf("%d", &new_mileage);
+                    
+                    if (result != 1) {
+                        printf("│ Неверный ввод! Ожидается число.\n");
+                        printf("│ Введите новый пробег:");
+                        clear_input_buffer();
+                        continue;
+                    }
 
+                    clear_input_buffer();
+                    
+                    if (validate_mileage(new_mileage) == 1) {
+                        technical_maintenance updated_mileage = db->records[actual_index];
+                        updated_mileage.mileage = new_mileage;
+                        modify_item(db, actual_index, updated_mileage);
+                        printf("│ Пробег изменен!\n");
+                        cnt_validate_mileage++;
+                    } else {
+                        printf("│ Неверный ввод! Пробег не может быть отрицательным.\n");
+                        printf("│ Введите новый пробег:");
+                    }
+                }
+                break;
+                
+            default:
+                printf("│ Неверный выбор!\n");
+                break;
+        } 
     } else {
         printf("│ Такого номера не существует!\n");
     }
-}
+} 
+
 // Главное меню
 void show_main_menu(struct data_base* db) {
     int cnt = 0;
@@ -205,11 +257,11 @@ void show_main_menu(struct data_base* db) {
                 break;
             default:
                 printf("Ошибка! Неверный ввод\n");
-                printf("Выберите пункт меню (1-5): ");
                 break;
         }
     }
 }
+
 void handle_show_all(struct data_base* db) {
     if (db->size == 0) {
         printf("База данных пуста.\n");

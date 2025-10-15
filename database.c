@@ -41,6 +41,14 @@ void free_system(struct data_base* system) {
     system->size = 0;
     system->capacity = 0;
 }
+//проверка коректного ввода пробега
+int validate_mileage(int mileage){
+    if (mileage >= 0){
+        return 1;
+    }else{
+        return 0;
+    }
+}
 //проверка корректного ввода даты
 int validate_date(const char* date) {
     if (strlen(date) != 10) return 0;
