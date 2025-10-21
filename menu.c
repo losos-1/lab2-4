@@ -63,14 +63,39 @@ void handle_add_record(struct data_base* db) {
     add_item(db, new_record);
     printf("│ Запись успешно добавлена!\n\n");
 }
-
+//Удаление всей базы данных
+void handle_clear_database(struct data_base* db) {
+    int cnt_clear = 0;
+    while (cnt_clear == 0) {   
+        printf("│ ВНИМАНИЕ! Это удалит ВСЕ записи без возможности восстановления!\n");
+        printf("│ Вы уверены? (1-Да/0-Нет): ");
+        int confirmation;
+        if (scanf("%d", &confirmation) == 1) {
+            clear_input_buffer();
+            if (confirmation == 1) {
+                clear_database(db);
+                printf("│ База данных полностью очищена!\n");
+                cnt_clear++;
+            } else if (confirmation == 0) {
+                printf("│ Операция отменена!\n");
+                cnt_clear++;
+            } else {
+                printf("│ Неверный ввод! Введите 1 или 0\n");
+            }
+        } else {
+            clear_input_buffer();
+            printf("│ Неверный ввод! Введите 1 или 0\n");
+        }
+    }
+}
 // Удаление записи
 void handle_delete_record(struct data_base* db) {
     int cnt_selection4 = 0;
     while (cnt_selection4 == 0) {   
         int confirmation = 0;
         printf("│ Введите номер заказа, который хотите удалить\n");
-        printf("│ Если хотите отменить операцию введите 0(ноль): ");
+        printf("│ Отмена оперции - 0(ноль): ");
+        printf("│ Удаление всей базы данных - (-1): ");
         int index_selection4;
         scanf("%d", &index_selection4);
         clear_input_buffer(); // Очистка буфера
@@ -213,7 +238,21 @@ void handle_edit_record(struct data_base* db) {
         printf("│ Такого номера не существует!\n");
     }
 } 
-
+int get_int_input(const char* prompt, int min, int max) {
+    int value;
+    
+    while (1) {
+        if (prompt != NULL) {
+            printf("%s", prompt);
+        }
+        
+        if (scanf("%d", &value) == 1 && value >= min && value <= max) {
+            return value;
+        }
+        while (getchar() != '\n');
+        printf("Ошибка! Введите число от %d до %d\n", min, max);
+    }
+}
 // Главное меню
 void show_main_menu(struct data_base* db) {
     int cnt = 0;
@@ -228,13 +267,12 @@ void show_main_menu(struct data_base* db) {
         printf("║ 3. Редактировать детали заказа          ║\n");
         printf("║ 4. Удалить заказ                        ║\n");
         printf("║ 5. сохранить изменение                  ║\n");
-        printf("║ 6. Выход                                ║\n");
+        printf("║ 6. Загрузить данные                     ║\n");
+        printf("║ 7. Очистить всю базу данных             ║\n");
+        printf("║ 8. Выход                                ║\n");
         printf("╚═════════════════════════════════════════╝\n\n");
-        printf(" Выберите пункт меню (1-6):            \n");
-        int selection;
-        scanf("%d", &selection);
-        clear_input_buffer();
         
+        int selection = get_int_input(" Выберите пункт меню (1-8): ", 1, 8);
         switch (selection) {
             case 1:
                 handle_show_all(db);
@@ -249,35 +287,74 @@ void show_main_menu(struct data_base* db) {
                 handle_delete_record(db);
                 break;
             case 5:
-                 save_to_file(db, "auto_service.dat");
+                int cnt_case5 = 0;
+                while (cnt_case5 == 0)
+                {   
+                    printf("│ Вы уверены что хотите сохранить данные? (1-Да/0-Нет): ");
+                    int confirmation;
+                    if (scanf("%d", &confirmation) == 1) {
+                        clear_input_buffer();
+                        if (confirmation == 1) {
+                            save_to_file(db, "auto_service.dat");
+                            printf("│ Данные успешно сохранены!\n");
+                            cnt_case5++;
+                        } else if (confirmation == 0) {
+                            printf("│ Сохранение отменено.\n");
+                            cnt_case5++;
+                        } else {
+                            printf("│ Неверный ввод! Введите 1 или 0\n");
+                        }
+                    } else {
+                        clear_input_buffer();
+                        printf("│ Неверный ввод! Введите 1 или 0\n");
+                    }
+                }
                 break;
             case 6:
+                printf("│ ВНИМАНИЕ: Текущие данные будут потеряны!\n");
+                printf("│ Вы уверены что хотите загрузить данные из файла? (1-Да/0-Нет): ");
+                int load_confirmation;
+                if (scanf("%d", &load_confirmation) == 1) {
+                    clear_input_buffer();
+                    if (load_confirmation == 1) {
+                        load_from_file(db, "auto_service.dat");
+                        printf("│ Данные загружены!\n");
+                    } else {
+                        printf("│ Загрузка отменена.\n");
+                    }
+                } else {
+                    clear_input_buffer();
+                    printf("│ Неверный ввод! Введите 1 или 0\n");
+                }
+                break;
+            case 7:
+                handle_clear_database(db);
+                break;
+            case 8:
                 printf("GGWP!\n");
                 cnt++;
-                break;
-            default:
-                printf("Ошибка! Неверный ввод\n");
                 break;
         }
     }
 }
-
 void handle_show_all(struct data_base* db) {
     if (db->size == 0) {
-        printf("База данных пуста.\n");
+        printf("│ Нет записей для отображения.\n");
         return;
     }
-    printf("Вся база заказов:\n");
-    display_items(db);
-}
-
-void display_items(struct data_base* system) {
-    for (int i = 0; i < system->size; i++) {
-        printf("Запись %d:\n", i + 1);
-        printf("ID: %d\n", system->records[i].id);
-        printf("Дата: %s\n", system->records[i].date);
-        printf("Тип работы: %s\n", system->records[i].type_work);
-        printf("Пробег: %d\n", system->records[i].mileage);
-        printf("Стоимость: %.2f\n\n", system->records[i].price);
+    
+    printf("╔════╦════════════╦══════════════════════════════╦══════════╦═════════════╗\n");
+    printf("║ ID ║    Дата    ║         Тип работы           ║  Пробег  ║  Стоимость  ║\n");
+    printf("╠════╬════════════╬══════════════════════════════╬══════════╬═════════════╣\n");
+    
+    for (int i = 0; i < db->size; i++) {
+        printf("║ %-2d ║ %-10s ║ %-28s ║ %-8d ║ %-11.2f ║\n", 
+               db->records[i].id, 
+               db->records[i].date, 
+               db->records[i].type_work, 
+               db->records[i].mileage, 
+               db->records[i].price);
     }
+    
+    printf("╚════╩════════════╩══════════════════════════════╩══════════╩═════════════╝\n");
 }
