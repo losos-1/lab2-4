@@ -109,22 +109,18 @@ void save_to_file(struct data_base* system, const char* filename) {
         printf("Ошибка открытия файла для записи: %s\n", filename);
         return;
     }
-    
-    // Создаем заголовок файла
     file_header header;
     header.magic = FILE_MAGIC;
     header.version = FILE_VERSION;
     header.record_count = system->size;
     header.checksum = calculate_checksum(system);
     
-    // Записываем заголовок
     if (fwrite(&header, sizeof(file_header), 1, file) != 1) {
         printf("Ошибка записи заголовка файла\n");
         fclose(file);
         return;
     }
     
-    // Записываем данные
     for (int i = 0; i < system->size; i++) {
         if (fwrite(&system->records[i], sizeof(technical_maintenance), 1, file) != 1) {
             printf("Ошибка записи записи %d\n", i);
@@ -134,7 +130,7 @@ void save_to_file(struct data_base* system, const char* filename) {
     
     fclose(file);
     printf("Данные сохранены в файл: %s\n", filename);
-    printf("  Записей: %d, Контрольная сумма: 0x%08X\n", system->size, header.checksum);
+    printf("  Записей: %d\n", system->size);
 }
 
 // Загрузка из бинарного файла с проверкой заголовка
@@ -178,7 +174,6 @@ void load_from_file(struct data_base* system, const char* filename) {
     system->size = records_read;
     fclose(file);
     
-    // Проверяем контрольную сумму
     unsigned int actual_checksum = calculate_checksum(system);
     if (actual_checksum != header.checksum) {
         printf("Предупреждение: Контрольная сумма не совпадает!\n");
@@ -186,7 +181,7 @@ void load_from_file(struct data_base* system, const char* filename) {
         printf("  Возможно повреждение данных\n");
     } else {
         printf("Данные загружены из файла: %s\n", filename);
-        printf("  Записей: %d, Контрольная сумма: 0x%08X ✓\n", system->size, actual_checksum);
+        printf("  Записей: %d\n", system->size);
     }
 }
 

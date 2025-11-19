@@ -19,7 +19,7 @@ void handle_add_record(struct data_base* db) {
         char new_date[11];
         printf("│ Введите дату в формате хх.хх.хххх:");
         scanf("%10s", new_date);
-        clear_input_buffer(); // Очистка буфера после scanf
+        clear_input_buffer();
         
         if (validate_date(new_date) == 0) {
             printf("│ Ошибка ввода! Неверный формат даты.\n");
@@ -33,8 +33,6 @@ void handle_add_record(struct data_base* db) {
     printf("│ Введите тип работы:");
     fgets(new_record.type_work, sizeof(new_record.type_work), stdin);
     new_record.type_work[strcspn(new_record.type_work, "\n")] = 0;
-    
-    // Автоматическое определение цены
     autoprice(&new_record);
     
     int cnt_mileage = 0;
@@ -43,7 +41,7 @@ void handle_add_record(struct data_base* db) {
         int mileage;
         printf("│ Введите пробег: ");
         int result = scanf("%d", &mileage);
-        clear_input_buffer(); // Всегда очищаем буфер после scanf
+        clear_input_buffer();
         
         if (result != 1) {
             printf("│ Ошибка ввода! Введите число.\n");
@@ -124,7 +122,6 @@ void handle_delete_record(struct data_base* db) {
     }
 }
 
-// Редактирование записи 
 void handle_edit_record(struct data_base* db) {
     printf("│ Введите номер заказа, который хотите изменить\n");
     printf("│ Если хотите отменить операцию введите 0(ноль): ");
@@ -253,20 +250,21 @@ int get_int_input(const char* prompt, int min, int max) {
         printf("Ошибка! Введите число от %d до %d\n", min, max);
     }
 }
-// Главное меню
-void show_main_menu(struct data_base* db) {
+// Обновленная главное меню в menu.c
+void show_main_menu(struct data_base* db, const char* username) {
     int cnt = 0;
     while (cnt == 0) {
         printf("╔═════════════════════════════════════════╗\n");
-        printf("║  Система управления базой данных автo   ║\n");
+        printf("║  Система управления базой данных авто   ║\n");
         printf("╠═════════════════════════════════════════╣\n");
+        printf("║ Пользователь: %-25s ║\n", username);
         printf("║ Текущее количество записей в базе:%-4d  ║\n",db->size);
         printf("║ Главное меню:                           ║\n");
         printf("║ 1. Показать все заказы                  ║\n");
         printf("║ 2. Добавить новый заказ                 ║\n");
         printf("║ 3. Редактировать детали заказа          ║\n");
         printf("║ 4. Удалить заказ                        ║\n");
-        printf("║ 5. сохранить изменение                  ║\n");
+        printf("║ 5. Сохранить изменения                  ║\n");
         printf("║ 6. Загрузить данные                     ║\n");
         printf("║ 7. Очистить всю базу данных             ║\n");
         printf("║ 8. Выход                                ║\n");
@@ -295,7 +293,10 @@ void show_main_menu(struct data_base* db) {
                     if (scanf("%d", &confirmation) == 1) {
                         clear_input_buffer();
                         if (confirmation == 1) {
-                            save_to_file(db, "auto_service.dat");
+                            // Используем файл пользователя
+                            char user_data_file[100];
+                            get_user_data_filename(username, user_data_file);
+                            save_to_file(db, user_data_file);
                             printf("│ Данные успешно сохранены!\n");
                             cnt_case5++;
                         } else if (confirmation == 0) {
@@ -317,7 +318,10 @@ void show_main_menu(struct data_base* db) {
                 if (scanf("%d", &load_confirmation) == 1) {
                     clear_input_buffer();
                     if (load_confirmation == 1) {
-                        load_from_file(db, "auto_service.dat");
+                        // Используем файл пользователя
+                        char user_data_file[100];
+                        get_user_data_filename(username, user_data_file);
+                        load_from_file(db, user_data_file);
                         printf("│ Данные загружены!\n");
                     } else {
                         printf("│ Загрузка отменена.\n");
@@ -343,18 +347,14 @@ void handle_show_all(struct data_base* db) {
         return;
     }
     
-    printf("╔════╦════════════╦══════════════════════════════╦══════════╦═════════════╗\n");
-    printf("║ ID ║    Дата    ║         Тип работы           ║  Пробег  ║  Стоимость  ║\n");
-    printf("╠════╬════════════╬══════════════════════════════╬══════════╬═════════════╣\n");
-    
     for (int i = 0; i < db->size; i++) {
-        printf("║ %-2d ║ %-10s ║ %-28s ║ %-8d ║ %-11.2f ║\n", 
-               db->records[i].id, 
-               db->records[i].date, 
-               db->records[i].type_work, 
-               db->records[i].mileage, 
-               db->records[i].price);
+        printf("┌────────────────── ЗАПИСЬ #%d ──────────────────┐\n", db->records[i].id);
+        printf("│ Дата:            %-28s │\n", db->records[i].date);
+        printf("│ Тип работы:      %-28s │\n", db->records[i].type_work);
+        printf("│ Пробег:          %-28d │\n", db->records[i].mileage);
+        printf("│ Стоимость:       %-28.2f │\n", db->records[i].price);
+        printf("└────────────────────────────────────────────────┘\n");
+        
+        
     }
-    
-    printf("╚════╩════════════╩══════════════════════════════╩══════════╩═════════════╝\n");
 }
